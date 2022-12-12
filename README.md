@@ -14,10 +14,10 @@ Trajectory prediction is important for self-driving vehicles because it allows t
 
 ### Model
 Training target: Whole path
-Input encoder: Attention model
+Input/Conditioning encoder: Attention model
 Latent: 128 dim
 Conditioning: History path, Other cars, Semantic information, Map information
-Output decoder: Denoising U-Net
+Output decoder: MLP
 
 ![](https://i.imgur.com/9suOiaB.png)
 
@@ -29,8 +29,6 @@ _90% of researches are based on auto-regressive approach._
 #### In this work
 _We employ diffusion model as a method for predicting trajectories, and incorporate semantic traffic information in addition to motion data._
 
-![](https://i.imgur.com/3Uup4VZ.png)
-
 ## Dataset
 ### [Argoverse 2](https://www.argoverse.org/av2.html)
 Argoverse 2 Motion Forecasting Dataset: 
@@ -38,7 +36,6 @@ Argoverse 2 Motion Forecasting Dataset:
 
 
 ## Reference
-[MID](https://github.com/gutianpei/mid)
 [latent-diffusion](https://github.com/CompVis/latent-diffusion)
 
 ## Members
