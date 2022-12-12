@@ -1,7 +1,7 @@
 # Stochastic Trajectory Prediction via Conditional Diffusion Models
 
-## Our Repository
-[Stochastic Trajectory Prediction via Conditional Diffusion Models]()
+## Our github Repository
+[Stochastic Trajectory Prediction via Conditional Diffusion Models](https://github.com/KaiYin77/Stochastic-Trajectory-Prediction-via-Conditional-Diffusion-Models)
 
 ## Idea
 
@@ -10,13 +10,26 @@ A typical way to perform trajectory prediction is using Transformer model to fus
 We propose a Diffusion based trajectory prediction model that can generate predictions with good variety. 
 
 ## Application
+Trajectory prediction is important for self-driving vehicles because it allows the vehicle to anticipate the movements of other objects on the road, such as other vehicles, pedestrians, and obstacles. This allows the vehicle to make decisions about its own motion, such as planning a safe and efficient path through traffic or avoiding collisions. Accurate trajectory prediction is essential for the safe operation of self-driving vehicles, as it enables the vehicle to respond quickly and appropriately to changing traffic conditions.
 
+### Model
+Training target: Whole path
+Input encoder: Attention model
+Latent: 128 dim
+Conditioning: History path, Other cars, Semantic information, Map information
+Output decoder: Denoising U-Net
 
-
+![](https://i.imgur.com/9suOiaB.png)
 
 ## Uniqueness or the comparisons with state-of-the art
+#### In previous work
+_90% of researches are based on auto-regressive approach._
+![](https://i.imgur.com/hZ3iCMq.jpg)
 
+#### In this work
+_We employ diffusion model as a method for predicting trajectories, and incorporate semantic traffic information in addition to motion data._
 
+![](https://i.imgur.com/3Uup4VZ.png)
 
 ## Dataset
 ### [Argoverse 2](https://www.argoverse.org/av2.html)
