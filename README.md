@@ -41,7 +41,7 @@ docker run --rm -it \
 --shm-size 60G \
 softmac/jupyterlab:ccbda
 ```
-Change `--shm_size` value to a value lower than your RAM size.
+Change `--shm-size` value to a value lower than your RAM size.
 
 Add `-v PATH_TO_DATA:/data` if needed.
 
