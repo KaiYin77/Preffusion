@@ -1,7 +1,6 @@
 # Stochastic Trajectory Prediction via Conditional Diffusion Models
 
 ## Get Started
----
 ### 1. Create virtual environment
 ```
 conda create -n ccbda_project python=3.8
@@ -15,12 +14,11 @@ pip install -r requirements.txt
 └── argo/
     └── raw/
 ```
-### 3. Generate data path in advance to speed up initialization.
+### 3. Generate data path in advance to speed up initialization
 Replace with your data root in __config.yaml__ 
 ``` yaml
 data:
     root: ~/Downloads/argo/
-...
 ```
 ```bash
 python generate_path.py
