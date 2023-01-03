@@ -1,6 +1,6 @@
 ---
 data:
-    root: /media/kevin/0a0011c4-206c-4fed-9312-2089919188d3/dataset/argo/
+    root: /home/cloud_computing/argo/
     validation_txt: ./data_path/validation.txt
 
 constant:
