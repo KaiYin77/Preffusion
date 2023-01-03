@@ -23,6 +23,33 @@ data:
 ```bash
 python generate_path.py
 ```
+
+## Docker
+
+`cd` into the project directory and run: 
+
+```
+docker run --rm -it \
+--gpus all \
+-p 8848:8888 \
+-p 2232:22 \
+-v $(pwd):/home \
+-e GRANT_SUDO=yes \
+-e JUPYTER_ENABLE_LAB=yes \
+--user root \
+--name gpu-jupyter \
+--shm_size 60G \
+softmac/jupyterlab:ccbda
+```
+Change `--shm_size` value to a value lower than your RAM size.
+
+Add `-v PATH_TO_DATA:/data` if needed.
+
+### Enter container
+
+To Enter container: `ssh root@localhost -p 2232`
+password: `root`
+
 ---
 ## Idea
 
