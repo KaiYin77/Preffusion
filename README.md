@@ -38,7 +38,7 @@ docker run --rm -it \
 -e JUPYTER_ENABLE_LAB=yes \
 --user root \
 --name gpu-jupyter \
---shm_size 60G \
+--shm-size 60G \
 softmac/jupyterlab:ccbda
 ```
 Change `--shm_size` value to a value lower than your RAM size.
