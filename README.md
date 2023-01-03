@@ -1,8 +1,31 @@
 # Stochastic Trajectory Prediction via Conditional Diffusion Models
 
-## Our github Repository
-[Stochastic Trajectory Prediction via Conditional Diffusion Models](https://github.com/KaiYin77/Stochastic-Trajectory-Prediction-via-Conditional-Diffusion-Models)
-
+## Get Started
+---
+### 1. Create virtual environment
+```
+conda create -n ccbda_project python=3.8
+conda activate ccbda_project
+pip install -r requirements.txt
+```
+### 2. Prepare data
+[Download from google drive](https://drive.google.com/drive/folders/18xDXy6Wok4cdkFjORTNaHNJY14aTJvb6?usp=share_link)
+```txt
+.
+└── argo/
+    └── raw/
+```
+### 3. Generate data path in advance to speed up initialization.
+Replace with your data root in __config.yaml__ 
+``` yaml
+data:
+    root: ~/Downloads/argo/
+...
+```
+```bash
+python generate_path.py
+```
+---
 ## Idea
 
 Trajectory prediction is a trending topic recent years. There are various deep learning models designed to do predict the trajectories of vehicles and pedestrians in driving scenes. Most of the competitions require models to predict multiple predictions and focus on evaluating the nearest prediction to the ground truth. 
