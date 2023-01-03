@@ -1,0 +1,10 @@
+---
+data:
+    root: /media/kevin/0a0011c4-206c-4fed-9312-2089919188d3/dataset/argo/
+    validation_txt: ./data_path/validation.txt
+
+constant:
+  time_horizon: 6
+  obs_steps: 50
+  pred_steps: 60
+  total_steps: 110
