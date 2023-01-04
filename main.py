@@ -49,7 +49,7 @@ class DDPMSystem(pl.LightningModule):
                 0.02 * 1000 / 1000,
                 )
         self.ddpm = GaussianDiffusion(
-                self.model, (60, 5), 1, 10,
+                self.model, (60, 4), 1, 10,
                 betas,
                 ema_decay=.9999,
                 ema_update_rate=1,
