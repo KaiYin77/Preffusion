@@ -126,7 +126,7 @@ class AttentionBlock(nn.Module):
         q = q.permute(0, 2, 3, 1).view(b, h * w, c)
         k = k.view(b, c, h * w)
         v = v.permute(0, 2, 3, 1).view(b, h * w, c)
-
+        
         dot_products = torch.bmm(q, k) * (c ** (-0.5))
         assert dot_products.shape == (b, h * w, h * w)
 
@@ -187,7 +187,7 @@ class ResidualBlock(nn.Module):
         self.class_bias = nn.Embedding(num_classes, out_channels) if num_classes is not None else None
 
         self.residual_connection = nn.Conv2d(in_channels, out_channels, 1) if in_channels != out_channels else nn.Identity()
-        self.attention = nn.Identity() if not use_attention else AttentionBlock(out_channels, norm, num_groups)
+        #self.attention = nn.Identity() if not use_attention else AttentionBlock(out_channels, norm, num_groups)
     
     def forward(self, x, time_emb=None, y=None):
         out = self.activation(self.norm_1(x))
@@ -206,7 +206,7 @@ class ResidualBlock(nn.Module):
 
         out = self.activation(self.norm_2(out))
         out = self.conv_2(out) + self.residual_connection(x)
-        out = self.attention(out)
+        # out = self.attention(out)
 
         return out
 

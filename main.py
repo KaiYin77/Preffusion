@@ -34,7 +34,7 @@ class DDPMSystem(pl.LightningModule):
         self.model = UNet(
                 img_channels=self.hparams.channel,
                 base_channels=128,
-                channel_mults=(1, 2, 2, 2),
+                channel_mults=(1, 2),
                 time_emb_dim=128*4,
                 norm='gn',
                 dropout=.1,
@@ -61,8 +61,7 @@ class DDPMSystem(pl.LightningModule):
     def forward(self, batch):
         ''' Future Trajectory
         '''
-        x = batch['y'].reshape(-1, 1, 60, 5)
-        
+        x = batch['y'].reshape(-1, 1, 60, 5)[..., :4]
         ''' Conditioning Factor
         '''
         past_traj = batch['x'].reshape(-1, 300)
