@@ -73,6 +73,7 @@ class DDPMSystem(pl.LightningModule):
                 self.config['data']['validation_txt'],
                 processed_val_dir
                 )
+        # ipdb.set_trace()
         # self.test_dataset = NoiseDataset(10000)
 
     def configure_optimizers(self):
