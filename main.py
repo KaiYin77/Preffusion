@@ -11,8 +11,10 @@ from pytorch_lightning.loggers import WandbLogger
 import torchvision.transforms as transforms
 
 from pytorch_gan_metrics import get_fid
+import yaml
+from pathlib import Path
 
-from dataset import mnistDataset, NoiseDataset
+from dataset import Argoverse2Dataset
 from utils.get_opts import get_opts
 from utils.utils import generate_linear_schedule
 
@@ -28,31 +30,34 @@ class DDPMSystem(pl.LightningModule):
         super(DDPMSystem, self).__init__()
         self.save_hyperparameters(hparams)
 
+        with open('config.yaml', 'r') as f:
+            self.config = yaml.safe_load(f)
+
         self.model = UNet(
-            img_channels=self.hparams.channel,
-            base_channels=128,
-            channel_mults=(1, 2, 2, 2),
-            time_emb_dim=128*4,
-            norm='gn',
-            dropout=.1,
-            activation=F.silu,
-            attention_resolutions=(1,),
-            num_classes=None,
-            initial_pad=0,
-        )
+                img_channels=self.hparams.channel,
+                base_channels=128,
+                channel_mults=(1, 2, 2, 2),
+                time_emb_dim=128*4,
+                norm='gn',
+                dropout=.1,
+                activation=F.silu,
+                attention_resolutions=(1,),
+                num_classes=None,
+                initial_pad=0,
+                )
         betas = generate_linear_schedule(
-            1000,
-            1e-4 * 1000 / 1000,
-            0.02 * 1000 / 1000,
-        )
+                1000,
+                1e-4 * 1000 / 1000,
+                0.02 * 1000 / 1000,
+                )
         self.ddpm = GaussianDiffusion(
-            self.model, (32, 32), 3, 10,
-            betas,
-            ema_decay=.9999,
-            ema_update_rate=1,
-            ema_start=2000,
-            loss_type='l2',
-        )
+                self.model, (32, 32), 3, 10,
+                betas,
+                ema_decay=.9999,
+                ema_update_rate=1,
+                ema_start=2000,
+                loss_type='l2',
+                )
         self.file_idx = 1
 
     def forward(self, x):
@@ -60,48 +65,54 @@ class DDPMSystem(pl.LightningModule):
         return loss
 
     def setup(self, stage):
-        self.train_dataset = mnistDataset(root=self.hparams.root_dir,
-                                          cache=True)
-        self.test_dataset = NoiseDataset(10000)
+        processed_val_dir = Path(self.config['data']['root']) /\
+                Path('processed/validation/')
+        processed_val_dir.mkdir(parents=True, exist_ok=True)
+        self.train_dataset = Argoverse2Dataset(
+                Path(self.config['data']['root'])/Path('raw/validation/'),
+                self.config['data']['validation_txt'],
+                processed_val_dir
+                )
+        # self.test_dataset = NoiseDataset(10000)
 
     def configure_optimizers(self):
         self.optimizer = torch.optim.Adam(
-            self.ddpm.parameters(),
-            lr=self.hparams.lr,
-            # weight_decay=self.hparams.weight_decay,
-        )
+                self.ddpm.parameters(),
+                lr=self.hparams.lr,
+                # weight_decay=self.hparams.weight_decay,
+                )
         # self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        #     self.optimizer,
-        #     T_max=len(self.train_dataloader()),
-        #     eta_min=0,
-        #     last_epoch=-1,
-        # )
+                #     self.optimizer,
+                #     T_max=len(self.train_dataloader()),
+                #     eta_min=0,
+                #     last_epoch=-1,
+                # )
         # self.scheduler = torch.optim.lr_scheduler.StepLR(
-        #     self.optimizer,
-        #     step_size=10,
-        #     gamma=0.9
-        # )
+                #     self.optimizer,
+                #     step_size=10,
+                #     gamma=0.9
+                # )
 
         return self.optimizer
-        # return [self.optimizer]
+    # return [self.optimizer]
         # return [self.optimizer], [self.scheduler]
 
     def train_dataloader(self):
         return DataLoader(
-            self.train_dataset,
-            batch_size=self.hparams.batch_size,
-            pin_memory=True,
-            shuffle=True,
-            num_workers=self.hparams.num_workers)
+                self.train_dataset,
+                batch_size=self.hparams.batch_size,
+                pin_memory=True,
+                shuffle=True,
+                num_workers=self.hparams.num_workers)
 
     def test_dataloader(self):
         return DataLoader(
-            self.test_dataset,
-            batch_size=512,
-            pin_memory=True,
-            shuffle=False,
-            num_workers=8
-        )
+                self.test_dataset,
+                batch_size=512,
+                pin_memory=True,
+                shuffle=False,
+                num_workers=8
+                )
 
     def training_step(self, batch, batch_idx):
         loss = self.forward(batch)
@@ -185,24 +196,24 @@ def main():
     wandb_logger = WandbLogger(project='ddpm')
 
     checkpoint_callback = ModelCheckpoint(
-        dirpath=f'./ckpt/{hparams.exp_name}/',
-        filename=hparams.exp_name+'/{epoch}',
-        monitor='train/loss',
-        mode='min',
-        save_top_k=1,
-    )
+            dirpath=f'./ckpt/{hparams.exp_name}/',
+            filename=hparams.exp_name+'/{epoch}',
+            monitor='train/loss',
+            mode='min',
+            save_top_k=1,
+            )
     if hparams.test:
         trainer = pl.Trainer(
-            max_epochs=hparams.num_epoch,
-            # default_root_dir='./ckpt/',
-            callbacks=[checkpoint_callback],
-            logger=wandb_logger,
-            gpus=[1],
-            log_every_n_steps=1,
-            fast_dev_run=hparams.fast_dev,
-            gradient_clip_val=1,
-            # resume_from_checkpoint=hparams.weight,
-        )
+                max_epochs=hparams.num_epoch,
+                # default_root_dir='./ckpt/',
+                callbacks=[checkpoint_callback],
+                logger=wandb_logger,
+                gpus=[1],
+                log_every_n_steps=1,
+                fast_dev_run=hparams.fast_dev,
+                gradient_clip_val=1,
+                # resume_from_checkpoint=hparams.weight,
+                )
         # trainer.test(ckpt_path=hparams.weight)
         # # ipdb.set_trace()
         model = system.load_from_checkpoint(hparams.weight)
@@ -233,15 +244,15 @@ def main():
 
     else:
         trainer = pl.Trainer(
-            max_epochs=hparams.num_epoch,
-            # default_root_dir='./ckpt/',
-            callbacks=[checkpoint_callback],
-            logger=wandb_logger,
-            gpus=1,
-            log_every_n_steps=1,
-            fast_dev_run=hparams.fast_dev,
-            gradient_clip_val=1,
-        )
+                max_epochs=hparams.num_epoch,
+                # default_root_dir='./ckpt/',
+                callbacks=[checkpoint_callback],
+                logger=wandb_logger,
+                gpus=1,
+                log_every_n_steps=1,
+                fast_dev_run=hparams.fast_dev,
+                gradient_clip_val=1,
+                )
         trainer.fit(system,
                     ckpt_path=hparams.weight)
 
