@@ -45,7 +45,7 @@ def get_opts():
     parser.add_argument('--beta_large', type=float,
                         default=0.02)
     parser.add_argument('--channel', type=int,
-                        default=3)
+                        default=1)
     parser.add_argument('--in_dim', type=int,
                         default=28**2)
     parser.add_argument('--n_gen', type=int,

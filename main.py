@@ -14,8 +14,8 @@ from pytorch_gan_metrics import get_fid
 import yaml
 from pathlib import Path
 
-from dataset import Argoverse2Dataset
-from utils.get_opts import get_opts
+from dataset import Argoverse2Dataset, argo_multi_agent_collate_fn
+from utils.get_opts import get_opts, create_yaml_parser
 from utils.utils import generate_linear_schedule
 
 from models.unet import UNet
@@ -29,9 +29,7 @@ class DDPMSystem(pl.LightningModule):
     def __init__(self, hparams):
         super(DDPMSystem, self).__init__()
         self.save_hyperparameters(hparams)
-
-        with open('config.yaml', 'r') as f:
-            self.config = yaml.safe_load(f)
+        self.config = create_yaml_parser()
 
         self.model = UNet(
                 img_channels=self.hparams.channel,
@@ -51,7 +49,7 @@ class DDPMSystem(pl.LightningModule):
                 0.02 * 1000 / 1000,
                 )
         self.ddpm = GaussianDiffusion(
-                self.model, (32, 32), 3, 10,
+                self.model, (60, 5), 1, 10,
                 betas,
                 ema_decay=.9999,
                 ema_update_rate=1,
@@ -60,8 +58,19 @@ class DDPMSystem(pl.LightningModule):
                 )
         self.file_idx = 1
 
-    def forward(self, x):
+    def forward(self, batch):
+        ''' Future Trajectory
+        '''
+        x = batch['y'].reshape(-1, 1, 60, 5)
+        
+        ''' Conditioning Factor
+        '''
+        past_traj = batch['x'].reshape(-1, 300)
+        lane = batch['lane_graph']
+        neighbor = batch['neighbor_graph'].reshape(-1, 66)
+
         loss = self.ddpm(x)
+        
         return loss
 
     def setup(self, stage):
@@ -73,6 +82,7 @@ class DDPMSystem(pl.LightningModule):
                 self.config['data']['validation_txt'],
                 processed_val_dir
                 )
+        self.collate_fn = argo_multi_agent_collate_fn
         # ipdb.set_trace()
         # self.test_dataset = NoiseDataset(10000)
 
@@ -102,6 +112,7 @@ class DDPMSystem(pl.LightningModule):
         return DataLoader(
                 self.train_dataset,
                 batch_size=self.hparams.batch_size,
+                collate_fn=self.collate_fn,
                 pin_memory=True,
                 shuffle=True,
                 num_workers=self.hparams.num_workers)
