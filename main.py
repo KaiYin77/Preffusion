@@ -94,7 +94,7 @@ class DDPMSystem(pl.LightningModule):
                 # )
 
         return self.optimizer
-    # return [self.optimizer]
+        # return [self.optimizer]
         # return [self.optimizer], [self.scheduler]
 
     def train_dataloader(self):
