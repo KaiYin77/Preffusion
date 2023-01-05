@@ -5,6 +5,7 @@ from torch.nn import functional as F
 from typing import List, TypeVar, Any
 # from torch import tensor as Tensor
 from abc import abstractmethod
+import ipdb
 
 Tensor = TypeVar('torch.tensor')
 
@@ -39,64 +40,46 @@ class VanillaVAE(BaseVAE):
                  in_channels: int,
                  latent_dim: int,
                  hidden_dims: List = None,
-                 **kwargs) -> None:
+                 ) -> None:
         super(VanillaVAE, self).__init__()
 
         self.latent_dim = latent_dim
 
         modules = []
         if hidden_dims is None:
-            hidden_dims = [32, 64, 128, 256, 512]
+            hidden_dims = [256, 128, 64]
+        hidden_dims.append(latent_dim)
 
         # Build Encoder
         for h_dim in hidden_dims:
             modules.append(
-                nn.Sequential(
-                    nn.Conv2d(in_channels, out_channels=h_dim,
-                              kernel_size=3, stride=2, padding=1),
-                    nn.BatchNorm2d(h_dim),
-                    nn.LeakyReLU())
-            )
+                    nn.Sequential(
+                        nn.Linear(in_channels, h_dim),
+                        nn.ReLU()
+                        )
+                    )
             in_channels = h_dim
 
         self.encoder = nn.Sequential(*modules)
-        self.fc_mu = nn.Linear(hidden_dims[-1]*4, latent_dim)
-        self.fc_var = nn.Linear(hidden_dims[-1]*4, latent_dim)
+        self.fc_mu = nn.Linear(hidden_dims[-1], latent_dim)
+        self.fc_var = nn.Linear(hidden_dims[-1], latent_dim)
 
         # Build Decoder
         modules = []
 
-        self.decoder_input = nn.Linear(latent_dim, hidden_dims[-1] * 4)
+        # self.decoder_input = nn.Linear(latent_dim, hidden_dims[-1] * 4)
 
         hidden_dims.reverse()
 
         for i in range(len(hidden_dims) - 1):
             modules.append(
                 nn.Sequential(
-                    nn.ConvTranspose2d(hidden_dims[i],
-                                       hidden_dims[i + 1],
-                                       kernel_size=3,
-                                       stride=2,
-                                       padding=1,
-                                       output_padding=1),
-                    nn.BatchNorm2d(hidden_dims[i + 1]),
-                    nn.LeakyReLU())
+                    nn.Linear(hidden_dims[i], hidden_dims[i + 1]),
+                    nn.ReLU())
             )
+        modules.append(nn.Sequential(nn.Linear(hidden_dims[-1], 300)))
 
         self.decoder = nn.Sequential(*modules)
-
-        self.final_layer = nn.Sequential(
-                            nn.ConvTranspose2d(hidden_dims[-1],
-                                               hidden_dims[-1],
-                                               kernel_size=3,
-                                               stride=2,
-                                               padding=1,
-                                               output_padding=1),
-                            nn.BatchNorm2d(hidden_dims[-1]),
-                            nn.LeakyReLU(),
-                            nn.Conv2d(hidden_dims[-1], out_channels=3,
-                                      kernel_size=3, padding=1),
-                            nn.Tanh())
 
     def encode(self, input: Tensor) -> List[Tensor]:
         """
@@ -122,10 +105,9 @@ class VanillaVAE(BaseVAE):
         :param z: (Tensor) [B x D]
         :return: (Tensor) [B x C x H x W]
         """
-        result = self.decoder_input(z)
-        result = result.view(-1, 512, 2, 2)
+        # result = self.decoder_input(z)
+        result = z.view(-1, 256)
         result = self.decoder(result)
-        result = self.final_layer(result)
         return result
 
     def reparameterize(self, mu: Tensor, logvar: Tensor) -> Tensor:
@@ -144,6 +126,7 @@ class VanillaVAE(BaseVAE):
     def forward(self, input: Tensor, **kwargs) -> List[Tensor]:
         mu, log_var = self.encode(input)
         z = self.reparameterize(mu, log_var)
+
         return [self.decode(z), input, mu, log_var]
 
     def loss_function(self,
