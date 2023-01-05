@@ -42,6 +42,7 @@ class DDPMSystem(pl.LightningModule):
                 attention_resolutions=(1,),
                 num_classes=None,
                 initial_pad=0,
+                switch=True,
                 )
         betas = generate_linear_schedule(
                 1000,
@@ -74,7 +75,7 @@ class DDPMSystem(pl.LightningModule):
                             'lane_mask': lane_mask, 
                             'neighbor': neighbor, 
                             'neighbor_mask': neighbor_mask}
-                            
+
         loss = self.ddpm(x, condition_fact)
         
         return loss

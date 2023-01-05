@@ -60,18 +60,22 @@ class Downsample(nn.Module):
         in_channels (int): number of input channels
     """
 
-    def __init__(self, in_channels):
+    def __init__(self, in_channels, switch):
         super().__init__()
 
         self.downsample = nn.Conv2d(in_channels, in_channels, 3, stride=2, padding=1)
+        self.downsample_condition = nn.Conv2d(in_channels, in_channels, 3, stride=2, padding=1)
+        self.switch = switch
     
     def forward(self, x, time_emb, y):
         if x.shape[2] % 2 == 1:
             raise ValueError("downsampling tensor height should be even")
         if x.shape[3] % 2 == 1:
             raise ValueError("downsampling tensor width should be even")
+        if self.switch:
+            y = self.downsample_condition(y)
 
-        return self.downsample(x)
+        return self.downsample(x), y
 
 
 class Upsample(nn.Module):
@@ -87,16 +91,24 @@ class Upsample(nn.Module):
         in_channels (int): number of input channels
     """
 
-    def __init__(self, in_channels):
+    def __init__(self, in_channels, switch):
         super().__init__()
 
         self.upsample = nn.Sequential(
             nn.Upsample(scale_factor=2, mode="nearest"),
             nn.Conv2d(in_channels, in_channels, 3, padding=1),
         )
+        self.upsample_condition = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode="nearest"),
+            nn.Conv2d(in_channels, in_channels, 3, padding=1),
+        )
+
+        self.switch=switch
     
     def forward(self, x, time_emb, y):
-        return self.upsample(x)
+        if self.switch:
+            y = self.upsample_condition(y)
+        return self.upsample(x), y
 
 
 class AttentionBlock(nn.Module):
@@ -169,6 +181,7 @@ class ResidualBlock(nn.Module):
         norm="gn",
         num_groups=32,
         use_attention=False,
+        switch=False,
     ):
         super().__init__()
 
@@ -176,6 +189,8 @@ class ResidualBlock(nn.Module):
 
         self.norm_1 = get_norm(norm, in_channels, num_groups)
         self.conv_1 = nn.Conv2d(in_channels, out_channels, 3, padding=1)
+
+        self.conv_condition = nn.Conv2d(in_channels, out_channels, 3, padding=1)
 
         self.norm_2 = get_norm(norm, out_channels, num_groups)
         self.conv_2 = nn.Sequential(
@@ -188,11 +203,12 @@ class ResidualBlock(nn.Module):
 
         self.residual_connection = nn.Conv2d(in_channels, out_channels, 1) if in_channels != out_channels else nn.Identity()
         #self.attention = nn.Identity() if not use_attention else AttentionBlock(out_channels, norm, num_groups)
+        self.switch=switch
     
     def forward(self, x, time_emb=None, y=None):
         out = self.activation(self.norm_1(x))
         out = self.conv_1(out)
-
+ 
         if self.time_bias is not None:
             if time_emb is None:
                 raise ValueError("time conditioning was specified but time_emb is not passed")
@@ -201,14 +217,17 @@ class ResidualBlock(nn.Module):
         if self.class_bias is not None:
             if y is None:
                 raise ValueError("class conditioning was specified but y is not passed")
-
             out += self.class_bias(y)[:, :, None, None]
+
+        if self.switch:
+            y = self.conv_condition(y)
+            out += y
 
         out = self.activation(self.norm_2(out))
         out = self.conv_2(out) + self.residual_connection(x)
         # out = self.attention(out)
 
-        return out
+        return out, y
 
 
 class UNet(nn.Module):
@@ -250,11 +269,13 @@ class UNet(nn.Module):
         norm="gn",
         num_groups=32,
         initial_pad=0,
+        switch=False,
     ):
         super().__init__()
 
         self.activation = activation
         self.initial_pad = initial_pad
+        self.switch = switch
 
         self.num_classes = num_classes
         self.time_mlp = nn.Sequential(
@@ -265,6 +286,7 @@ class UNet(nn.Module):
         ) if time_emb_dim is not None else None
 
         self.init_conv = nn.Conv2d(img_channels, base_channels, 3, padding=1)
+        self.init_conv_condition = nn.Conv2d(img_channels, base_channels, 3, padding=1)
 
         self.downs = nn.ModuleList()
         self.ups = nn.ModuleList()
@@ -286,12 +308,13 @@ class UNet(nn.Module):
                     norm=norm,
                     num_groups=num_groups,
                     use_attention=i in attention_resolutions,
+                    switch=switch,
                 ))
                 now_channels = out_channels
                 channels.append(now_channels)
             
             if i != len(channel_mults) - 1:
-                self.downs.append(Downsample(now_channels))
+                self.downs.append(Downsample(now_channels, switch))
                 channels.append(now_channels)
         
 
@@ -306,6 +329,7 @@ class UNet(nn.Module):
                 norm=norm,
                 num_groups=num_groups,
                 use_attention=True,
+                switch=switch,
             ),
             ResidualBlock(
                 now_channels,
@@ -317,6 +341,7 @@ class UNet(nn.Module):
                 norm=norm,
                 num_groups=num_groups,
                 use_attention=False,
+                switch=switch,
             ),
         ])
 
@@ -334,11 +359,12 @@ class UNet(nn.Module):
                     norm=norm,
                     num_groups=num_groups,
                     use_attention=i in attention_resolutions,
+                    switch=switch,
                 ))
                 now_channels = out_channels
 
             if i != 0:
-                self.ups.append(Upsample(now_channels))
+                self.ups.append(Upsample(now_channels, switch))
 
         assert len(channels) == 0
 
@@ -361,23 +387,29 @@ class UNet(nn.Module):
         if self.num_classes is not None and y is None:
             raise ValueError("class conditioning was specified but y is not passed")
 
-        if self.num_classes == None:
+        if self.switch == False:
             x += y
         x = self.init_conv(x)
 
+        if self.switch:
+            y = self.init_conv_condition(y)
+
         skips = [x]
+        skips_condition = [y]
 
         for layer in self.downs:
-            x = layer(x, time_emb, y)
+            x, y = layer(x, time_emb, y)
             skips.append(x)
+            skips_condition.append(y)
 
         for layer in self.mid:
-            x = layer(x, time_emb, y)
-
+            x, y = layer(x, time_emb, y)
+            
         for layer in self.ups:
             if isinstance(layer, ResidualBlock):
                 x = torch.cat([x, skips.pop()], dim=1)
-            x = layer(x, time_emb, y)
+                y = torch.cat([y, skips_condition.pop()], dim=1)
+            x, y = layer(x, time_emb, y)
 
         x = self.activation(self.out_norm(x))
         x = self.out_conv(x)
