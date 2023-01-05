@@ -32,31 +32,31 @@ class DDPMSystem(pl.LightningModule):
         self.config = create_yaml_parser()
 
         self.model = UNet(
-                img_channels=self.hparams.channel,
-                base_channels=128,
-                channel_mults=(1, 2),
-                time_emb_dim=128*4,
-                norm='gn',
-                dropout=.1,
-                activation=F.silu,
-                attention_resolutions=(1,),
-                num_classes=None,
-                initial_pad=0,
-                switch=self.hparams.switch,
-                )
+            img_channels=self.hparams.channel,
+            base_channels=128,
+            channel_mults=(1, 2),
+            time_emb_dim=128*4,
+            norm='gn',
+            dropout=.1,
+            activation=F.silu,
+            attention_resolutions=(1,),
+            num_classes=None,
+            initial_pad=0,
+            switch=self.hparams.switch,
+        )
         betas = generate_linear_schedule(
-                1000,
-                1e-4 * 1000 / 1000,
-                0.02 * 1000 / 1000,
-                )
+            1000,
+            1e-4 * 1000 / 1000,
+            0.02 * 1000 / 1000,
+        )
         self.ddpm = GaussianDiffusion(
-                self.model, (60, 4), 1, 10,
-                betas,
-                ema_decay=.9999,
-                ema_update_rate=1,
-                ema_start=2000,
-                loss_type='l2',
-                )
+            self.model, (60, 4), 1, 10,
+            betas,
+            ema_decay=.9999,
+            ema_update_rate=1,
+            ema_start=2000,
+            loss_type='l2',
+        )
         self.file_idx = 1
 
     def forward(self, batch):
@@ -70,46 +70,46 @@ class DDPMSystem(pl.LightningModule):
         neighbor = batch['neighbor_graph'].reshape(-1, 66)
         lane_mask = batch['lane_mask']
         neighbor_mask = batch['neighbor_mask']
-        condition_fact = {'past_traj': past_traj, 
-                            'lane': lane,
-                            'lane_mask': lane_mask, 
-                            'neighbor': neighbor, 
-                            'neighbor_mask': neighbor_mask}
+        condition_fact = {'past_traj': past_traj,
+                          'lane': lane,
+                          'lane_mask': lane_mask,
+                          'neighbor': neighbor,
+                          'neighbor_mask': neighbor_mask}
 
         loss = self.ddpm(x, condition_fact)
-        
+
         return loss
 
     def setup(self, stage):
         processed_val_dir = Path(self.config['data']['root']) /\
-                Path('processed/validation/')
+            Path('processed/validation/')
         processed_val_dir.mkdir(parents=True, exist_ok=True)
         self.train_dataset = Argoverse2Dataset(
-                Path(self.config['data']['root'])/Path('raw/validation/'),
-                self.config['data']['validation_txt'],
-                processed_val_dir
-                )
+            Path(self.config['data']['root'])/Path('raw/validation/'),
+            self.config['data']['validation_txt'],
+            processed_val_dir
+        )
         self.collate_fn = argo_multi_agent_collate_fn
         # ipdb.set_trace()
         # self.test_dataset = NoiseDataset(10000)
 
     def configure_optimizers(self):
         self.optimizer = torch.optim.Adam(
-                self.ddpm.parameters(),
-                lr=self.hparams.lr,
-                # weight_decay=self.hparams.weight_decay,
-                )
+            self.ddpm.parameters(),
+            lr=self.hparams.lr,
+            # weight_decay=self.hparams.weight_decay,
+        )
         # self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-                #     self.optimizer,
-                #     T_max=len(self.train_dataloader()),
-                #     eta_min=0,
-                #     last_epoch=-1,
-                # )
+        #     self.optimizer,
+        #     T_max=len(self.train_dataloader()),
+        #     eta_min=0,
+        #     last_epoch=-1,
+        # )
         # self.scheduler = torch.optim.lr_scheduler.StepLR(
-                #     self.optimizer,
-                #     step_size=10,
-                #     gamma=0.9
-                # )
+        #     self.optimizer,
+        #     step_size=10,
+        #     gamma=0.9
+        # )
 
         return self.optimizer
         # return [self.optimizer]
@@ -117,21 +117,21 @@ class DDPMSystem(pl.LightningModule):
 
     def train_dataloader(self):
         return DataLoader(
-                self.train_dataset,
-                batch_size=self.hparams.batch_size,
-                collate_fn=self.collate_fn,
-                pin_memory=True,
-                shuffle=True,
-                num_workers=self.hparams.num_workers)
+            self.train_dataset,
+            batch_size=self.hparams.batch_size,
+            collate_fn=self.collate_fn,
+            pin_memory=True,
+            shuffle=True,
+            num_workers=self.hparams.num_workers)
 
     def test_dataloader(self):
         return DataLoader(
-                self.test_dataset,
-                batch_size=512,
-                pin_memory=True,
-                shuffle=False,
-                num_workers=8
-                )
+            self.test_dataset,
+            batch_size=512,
+            pin_memory=True,
+            shuffle=False,
+            num_workers=8
+        )
 
     def training_step(self, batch, batch_idx):
         loss = self.forward(batch)
@@ -166,10 +166,10 @@ class DDPMSystem(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         samples = self.ddpm.sample(
-                batch.shape[0],
-                device=self.device,
-                input=batch
-                )
+            batch.shape[0],
+            device=self.device,
+            input=batch
+        )
         samples = (samples.clamp(-1, 1) + 1) / 2
         samples = transforms.Resize((28, 28))(samples)
         for img in samples:
@@ -215,24 +215,24 @@ def main():
     wandb_logger = WandbLogger(project='ddpm')
 
     checkpoint_callback = ModelCheckpoint(
-            dirpath=f'./ckpt/{hparams.exp_name}/',
-            filename=hparams.exp_name+'/{epoch}',
-            monitor='train/loss',
-            mode='min',
-            save_top_k=1,
-            )
+        dirpath=f'./ckpt/{hparams.exp_name}/',
+        filename=hparams.exp_name+'/{epoch}',
+        monitor='train/loss',
+        mode='min',
+        save_top_k=1,
+    )
     if hparams.test:
         trainer = pl.Trainer(
-                max_epochs=hparams.num_epoch,
-                # default_root_dir='./ckpt/',
-                callbacks=[checkpoint_callback],
-                logger=wandb_logger,
-                gpus=[1],
-                log_every_n_steps=1,
-                fast_dev_run=hparams.fast_dev,
-                gradient_clip_val=1,
-                # resume_from_checkpoint=hparams.weight,
-                )
+            max_epochs=hparams.num_epoch,
+            # default_root_dir='./ckpt/',
+            callbacks=[checkpoint_callback],
+            logger=wandb_logger,
+            gpus=[1],
+            log_every_n_steps=1,
+            fast_dev_run=hparams.fast_dev,
+            gradient_clip_val=1,
+            # resume_from_checkpoint=hparams.weight,
+        )
         # trainer.test(ckpt_path=hparams.weight)
         # # ipdb.set_trace()
         model = system.load_from_checkpoint(hparams.weight)
@@ -263,15 +263,15 @@ def main():
 
     else:
         trainer = pl.Trainer(
-                max_epochs=hparams.num_epoch,
-                # default_root_dir='./ckpt/',
-                callbacks=[checkpoint_callback],
-                logger=wandb_logger,
-                gpus=1,
-                log_every_n_steps=1,
-                fast_dev_run=hparams.fast_dev,
-                gradient_clip_val=1,
-                )
+            max_epochs=hparams.num_epoch,
+            # default_root_dir='./ckpt/',
+            callbacks=[checkpoint_callback],
+            logger=wandb_logger,
+            gpus=1,
+            log_every_n_steps=1,
+            fast_dev_run=hparams.fast_dev,
+            gradient_clip_val=1,
+        )
         trainer.fit(system,
                     ckpt_path=hparams.weight)
 
