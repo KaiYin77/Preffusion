@@ -17,6 +17,7 @@ from pathlib import Path
 from dataset import Argoverse2Dataset, argo_multi_agent_collate_fn
 from utils.get_opts import get_opts, create_yaml_parser
 from utils.utils import generate_linear_schedule
+from utils.visualize import VisualizeInterface
 
 from models.unet import UNet
 # from models.ema import *
@@ -58,6 +59,7 @@ class DDPMSystem(pl.LightningModule):
             loss_type='l2',
         )
         self.file_idx = 1
+        self.visualize_interface = VisualizeInterface()
 
     def forward(self, batch):
         ''' Future Trajectory
@@ -89,9 +91,13 @@ class DDPMSystem(pl.LightningModule):
             self.config['data']['validation_txt'],
             processed_val_dir
         )
+        self.test_dataset = Argoverse2Dataset(
+            Path(self.config['data']['root'])/Path('raw/validation/'),
+            self.config['data']['validation_txt'],
+            processed_val_dir,
+            mode="sampling"
+        )
         self.collate_fn = argo_multi_agent_collate_fn
-        # ipdb.set_trace()
-        # self.test_dataset = NoiseDataset(10000)
 
     def configure_optimizers(self):
         self.optimizer = torch.optim.Adam(
@@ -127,10 +133,11 @@ class DDPMSystem(pl.LightningModule):
     def test_dataloader(self):
         return DataLoader(
             self.test_dataset,
-            batch_size=512,
+            batch_size=1,
+            collate_fn=self.collate_fn,
             pin_memory=True,
             shuffle=False,
-            num_workers=8
+            num_workers=0,
         )
 
     def training_step(self, batch, batch_idx):
@@ -166,15 +173,16 @@ class DDPMSystem(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         samples = self.ddpm.sample(
-            batch.shape[0],
+            batch['noise_data'].shape[0],
             device=self.device,
             input=batch
         )
-        samples = (samples.clamp(-1, 1) + 1) / 2
-        samples = transforms.Resize((28, 28))(samples)
-        for img in samples:
-            save_image(img, f'generated/{self.file_idx:05d}.png')
-            self.file_idx += 1
+        self.visualize_interface.argo_forward(
+            batch,
+            batch_idx,
+            self.test_dataset,
+            samples,
+        )
         return samples
 
     # def test_epoch_end(self, outputs):
@@ -227,7 +235,7 @@ def main():
             # default_root_dir='./ckpt/',
             callbacks=[checkpoint_callback],
             logger=wandb_logger,
-            gpus=[1],
+            gpus=1,
             log_every_n_steps=1,
             fast_dev_run=hparams.fast_dev,
             gradient_clip_val=1,

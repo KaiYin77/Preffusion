@@ -94,7 +94,19 @@ class GaussianDiffusion(nn.Module):
         if input is None:
             x = torch.randn(batch_size, self.img_channels, *self.img_size, device=device)
         else:
-            x = input
+            x = input['noise_data']
+            past_traj = input['x'].reshape(-1, 300)
+            lane = input['lane_graph']
+            neighbor = input['neighbor_graph'].reshape(-1, 66)
+            lane_mask = input['lane_mask']
+            neighbor_mask = input['neighbor_mask']
+            condition_fact = {'past_traj': past_traj,
+                              'lane': lane,
+                              'lane_mask': lane_mask,
+                              'neighbor': neighbor,
+                              'neighbor_mask': neighbor_mask}
+            y = condition_fact
+            y = self.conditional_model(y)
         
         for t in tqdm(range(self.num_timesteps - 1, -1, -1)):
             t_batch = torch.tensor([t], device=device).repeat(batch_size)

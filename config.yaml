@@ -17,3 +17,38 @@ vae:
   scheduler_gamma: 0.95
   latent_dim: 256
   in_channels: 300
+
+plot:
+    bg:
+        color: '#FFFFFF'
+    lane: 
+        color: '#0A1931' 
+        lw: 1
+        alpha: 0.9
+    lane_polygon: 
+        color: dimgray
+        lw: 1.5
+        alpha: 0.9
+    crosswalk_polygon:
+        color: darkorange
+    neighbor:
+        fc: '#5389FF'
+        ec: '#0814ff'
+    agent:
+        fc: '#73CEB3'
+        ec: 'green'
+    history: 
+        color: green
+        lw: 2.0
+    gt: 
+        color: green
+        lw: 5.0
+        alpha: 0.6
+    goal:
+        color: gold
+        lw: 2.0
+        alpha: 1
+    traj: 
+        color: crimson
+        lw: 2.0
+        alpha: 1

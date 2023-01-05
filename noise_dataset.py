@@ -3,9 +3,9 @@ import torch
 
 
 class NoiseDataset(Dataset):
-    def __init__(self, len=100):
+    def __init__(self, len=6):
         self.len = len
-        self.x = torch.randn(len, 3, 32, 32)
+        self.x = torch.randn(len, 1, 60, 4)
 
     def __len__(self):
         return self.len
@@ -15,7 +15,6 @@ class NoiseDataset(Dataset):
 
 
 if __name__ == '__main__':
-    # test()
-    dataset = NoiseDataset(10)
+    dataset = NoiseDataset(1)
     for i in dataset:
         print(i.shape)

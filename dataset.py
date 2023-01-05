@@ -1,3 +1,4 @@
+from noise_dataset import NoiseDataset
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
@@ -22,6 +23,7 @@ import itertools
 from multiprocessing.pool import ThreadPool
 from multiprocessing import Manager
 torch.multiprocessing.set_sharing_strategy('file_system')
+
 
 ''' Yaml Parser
 '''
@@ -68,6 +70,7 @@ class Argoverse2Dataset(Dataset):
         raw_dir,
         raw_path,
         processed_dir,
+        mode=None,
     ):
         from av2.datasets.motion_forecasting import scenario_serialization
         from av2.map.map_api import ArgoverseStaticMap
@@ -90,6 +93,10 @@ class Argoverse2Dataset(Dataset):
         ''' load data path
         '''
         self.all_scenario_file_list = self.load_from_txt(raw_path)
+
+        ''' Sample mode
+        '''
+        self.mode = mode
 
     def load_from_txt(self, raw_path):
         txt_file = open(raw_path, "r")
@@ -176,17 +183,21 @@ class Argoverse2Dataset(Dataset):
                 actor_state[:, 2:4] = actor_state[:, 2:4].mm(rot)  # velocity
                 actor_state[:, 4] = actor_state[:, 4] - theta  # heading
                 if (track.track_id == target_id):
-                    target_y_track.append(actor_state[int(config['constant']['obs_steps']):])
+                    target_y_track.append(
+                        actor_state[int(config['constant']['obs_steps']):])
                     actor_state = torch.cat([actor_state, torch.empty(
                         int(config['constant']['total_steps']), 1).fill_(_OBJECT_TYPE[track.object_type])], -1)
-                    target_x_track.append(actor_state[:int(config['constant']['obs_steps'])])
+                    target_x_track.append(
+                        actor_state[:int(config['constant']['obs_steps'])])
                 else:
                     # apply dynamic fov filtering
                     if (torch.norm(actor_state[-1, :2]) > map_radius):
                         continue
-                    start = actor_timestep == int(config['constant']['obs_steps'])-11
+                    start = actor_timestep == int(
+                        config['constant']['obs_steps'])-11
                     start_idx = torch.nonzero(start).item()
-                    end = actor_timestep == int(config['constant']['obs_steps'])-1
+                    end = actor_timestep == int(
+                        config['constant']['obs_steps'])-1
                     end_idx = torch.nonzero(end).item()
 
                     actor_state = torch.cat(
@@ -197,7 +208,8 @@ class Argoverse2Dataset(Dataset):
             '''
             lane_segments = static_map.get_nearby_lane_segments(
                 orig.cpu().detach().numpy(), map_radius)
-            lane_centerlines = torch.Tensor([list(static_map.get_lane_segment_centerline(s.id)) for s in lane_segments])
+            lane_centerlines = torch.Tensor(
+                [list(static_map.get_lane_segment_centerline(s.id)) for s in lane_segments])
             lane_centerlines = lane_centerlines[..., :2] - orig
             lane_centerlines = lane_centerlines.reshape(
                 -1, 2).mm(rot).reshape(-1, 10, 2)
@@ -271,49 +283,56 @@ class Argoverse2Dataset(Dataset):
             # sample['x'].shape -> [x,y,vx,vy,heading,type] (50, 6) -> (250)
             sample['x'] = torch.stack(
                 target_x_track).reshape(-1, int(config['constant']['obs_steps']), 6)
-            
+
             # sample['y'].shape -> [x,y,vx,vy, heading] (60, 5) -> (240)
             sample['y'] = torch.stack(
                 target_y_track).reshape(-1, int(config['constant']['pred_steps']), 5)
-            
+
             # sample['orig'].shape -> (2)
             sample['orig'] = orig
-            
+
             # sample['rot'].shape -> (2, 2)
             sample['rot'] = rot
-            
+
             # sample['neighbor_graph'].shape -> (N, 11, 6)
             sample['neighbor_graph'] = torch.zeros(1, 11, 6) if len(neighbor_tracks) == 0 else torch.stack(
                 neighbor_tracks).reshape(-1, 11, 6)
-            
+
             # sample['lane_graph'].shape -> (N, 10, 2)
             sample['lane_graph'] = torch.zeros(
                 1, 10, 2) if lane_centerlines.shape[0] == 0 else lane_centerlines.reshape(-1, 10, 2)
-            
+
             # sample['crossawalk_graph'].shape -> (N, 2, 2)
             sample['crosswalk_graph'] = torch.zeros(
                 1, 2, 2) if len(crosswalk_waypoint_list) == 0 else crosswalk_waypoint.reshape(-1, 2, 2)
-            
+
             # sample['crossawalk_polygon'].shape -> (N, 5, 2)
             sample['crosswalk_polygon'] = torch.zeros(1, 5, 2) if len(
                 crosswalk_polygon_list) == 0 else crosswalk_polygon.reshape(-1, 5, 2)
-            
+
             # sample['lane_polygon'].shape -> (N, 21, 2)
             sample['lane_polygon'] = lane_polygon
-            
+
             # sample['lane_boundary'].shape -> (N, 10, 3)
             sample['lane_boundary'] = torch.zeros(
                 1, 10, 3) if lane_boundary.shape[0] == 0 else lane_boundary.reshape(-1, 10, 3)
-            
+
             # config
             sample['scenario_id'] = scenario_id
             sample['target_id'] = target_id
             sample['batch_id'] = idx
 
             torch.save(sample, sample_path)
+
+        if self.mode == 'sampling':
+            test_data = NoiseDataset(1)
+            sample['noise_data'] = test_data[0].unsqueeze(0)
+
         return sample
 
 # function called after collecting samples in batch
+
+
 def argo_multi_agent_collate_fn(batch):
     elem = [k for k, v in batch[0].items()]
 
@@ -406,6 +425,7 @@ def preprocess_data():
     dataiter = tqdm(dataloader)
     for i, data in enumerate(dataiter):
         print('[info] - dataset.py - test looping')
+
 
 if __name__ == '__main__':
     preprocess_data()
