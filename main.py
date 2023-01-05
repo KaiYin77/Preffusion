@@ -10,7 +10,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 import torchvision.transforms as transforms
 
-from pytorch_gan_metrics import get_fid
+# from pytorch_gan_metrics import get_fid
 import yaml
 from pathlib import Path
 
@@ -42,6 +42,7 @@ class DDPMSystem(pl.LightningModule):
                 attention_resolutions=(1,),
                 num_classes=None,
                 initial_pad=0,
+                switch=self.hparams.switch,
                 )
         betas = generate_linear_schedule(
                 1000,
@@ -67,8 +68,15 @@ class DDPMSystem(pl.LightningModule):
         past_traj = batch['x'].reshape(-1, 300)
         lane = batch['lane_graph']
         neighbor = batch['neighbor_graph'].reshape(-1, 66)
+        lane_mask = batch['lane_mask']
+        neighbor_mask = batch['neighbor_mask']
+        condition_fact = {'past_traj': past_traj, 
+                            'lane': lane,
+                            'lane_mask': lane_mask, 
+                            'neighbor': neighbor, 
+                            'neighbor_mask': neighbor_mask}
 
-        loss = self.ddpm(x)
+        loss = self.ddpm(x, condition_fact)
         
         return loss
 

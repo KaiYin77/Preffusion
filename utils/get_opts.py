@@ -27,6 +27,7 @@ def get_opts():
                         default=0)
     parser.add_argument('--accumulate', type=int,
                         default=1)
+    parser.add_argument('--switch', action='store_true', default=True)
 
     parser.add_argument('--weight', type=str,
                         default=None)

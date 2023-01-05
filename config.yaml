@@ -8,3 +8,12 @@ constant:
   obs_steps: 50
   pred_steps: 60
   total_steps: 110
+
+vae:
+  epochs: 100
+  kld_weight: 0.00025
+  LR: 0.00005
+  weight_decay: 0.0
+  scheduler_gamma: 0.95
+  latent_dim: 256
+  in_channels: 300
