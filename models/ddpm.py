@@ -138,6 +138,7 @@ class GaussianDiffusion(nn.Module):
 
         y = self.conditional_model(y)
         perturbed_x = self.perturb_x(x, t, noise)
+        
         estimated_noise = self.model(perturbed_x, t, y)
 
         if self.loss_type == "l1":

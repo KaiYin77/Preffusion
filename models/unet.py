@@ -361,6 +361,8 @@ class UNet(nn.Module):
         if self.num_classes is not None and y is None:
             raise ValueError("class conditioning was specified but y is not passed")
 
+        if self.num_classes == None:
+            x += y
         x = self.init_conv(x)
 
         skips = [x]
