@@ -10,7 +10,7 @@ constant:
   total_steps: 110
 
 vae:
-  epochs: 10
+  epochs: 100
   kld_weight: 0.00025
   LR: 0.00005
   weight_decay: 0.0
