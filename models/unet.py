@@ -5,6 +5,7 @@ import torch.nn.functional as F
 
 from torch.nn.modules.normalization import GroupNorm
 
+import ipdb
 
 def get_norm(norm, num_channels, num_groups):
     if norm == "in":
@@ -68,6 +69,7 @@ class Downsample(nn.Module):
         self.switch = switch
     
     def forward(self, x, time_emb, y):
+        # ipdb.set_trace()
         if x.shape[2] % 2 == 1:
             raise ValueError("downsampling tensor height should be even")
         if x.shape[3] % 2 == 1:
@@ -202,7 +204,7 @@ class ResidualBlock(nn.Module):
         self.class_bias = nn.Embedding(num_classes, out_channels) if num_classes is not None else None
 
         self.residual_connection = nn.Conv2d(in_channels, out_channels, 1) if in_channels != out_channels else nn.Identity()
-        #self.attention = nn.Identity() if not use_attention else AttentionBlock(out_channels, norm, num_groups)
+        self.attention = nn.Identity() if not use_attention else AttentionBlock(out_channels, norm, num_groups)
         self.switch=switch
     
     def forward(self, x, time_emb=None, y=None):

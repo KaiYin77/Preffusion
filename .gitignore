@@ -4,3 +4,5 @@ wandb/
 data_path/
 lightning_logs/
 weights/
+ckpt/
+cloud_computing/
