@@ -140,21 +140,21 @@ class DDPMSystem(pl.LightningModule):
         self.log('train/loss', loss.mean())
 
         # samples = self.ddpm.sample(8, self.device)
-        samples = self.ddpm.sample_diffusion_sequence(
-                8,
-                device=self.device)
-        samples = torch.cat(samples)
-        samples = (samples.clip(-1, 1)+1)/2
-        # ipdb.set_trace()
-        # samples = samples.view(-1, 3, 32, 32)
-        samples = transforms.Resize((28, 28))(samples)
-        save_image(samples, 'gen.png')
-
-        samples = self.ddpm.sample(10, self.device)
-        samples = (samples.clamp(-1, 1) + 1) / 2
-        samples = transforms.Resize((28, 28))(samples)
-        FID = get_fid(samples, 'data/mnist.npz')
-        self.log('fid', FID)
+        # samples = self.ddpm.sample_diffusion_sequence(
+        #         8,
+        #         device=self.device)
+        # samples = torch.cat(samples)
+        # samples = (samples.clip(-1, 1)+1)/2
+        # # ipdb.set_trace()
+        # # samples = samples.view(-1, 3, 32, 32)
+        # samples = transforms.Resize((28, 28))(samples)
+        # save_image(samples, 'gen.png')
+        #
+        # samples = self.ddpm.sample(10, self.device)
+        # samples = (samples.clamp(-1, 1) + 1) / 2
+        # samples = transforms.Resize((28, 28))(samples)
+        # FID = get_fid(samples, 'data/mnist.npz')
+        # self.log('fid', FID)
 
     def test_step(self, batch, batch_idx):
         samples = self.ddpm.sample(
