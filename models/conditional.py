@@ -7,16 +7,18 @@ from .conditional_subnet import MLP, MultiheadAttention, MapNet
 class Conditional(nn.Module):
     def __init__(self):
         super(Conditional, self).__init__()
-        self.motion_encoder = MLP(300, 128, 128)
-        self.lane_encoder = MapNet(2, 128, 128, 10)
-        self.lane_attn = MultiheadAttention(128, 8)
-        self.neighbor_encoder = MLP(66, 128, 128)
-        self.neighbor_attn = MultiheadAttention(128, 8)
+        self.motion_encoder = MLP(300, 240, 240)
+        self.lane_encoder = MapNet(2, 240, 240, 10)
+        self.lane_attn = MultiheadAttention(240, 8)
+        self.neighbor_encoder = MLP(66, 240, 240)
+        self.neighbor_attn = MultiheadAttention(240, 8)
 
     def forward(self, data):
+        batch_size = data['past_traj'].shape[0]
+
         x = data['past_traj'].reshape(-1, 300) #50*6
         x = self.motion_encoder(x)
-        
+
         lane = data['lane']
         lane = self.lane_encoder(lane)
         
@@ -31,4 +33,4 @@ class Conditional(nn.Module):
         
         neighbor_mask = data['neighbor_mask']
         x = self.neighbor_attn(x, neighbor, neighbor, attn_mask=neighbor_mask) 
-        return x
+        return x.reshape(batch_size, -1, 60, 4)
