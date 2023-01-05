@@ -42,7 +42,7 @@ class DDPMSystem(pl.LightningModule):
                 attention_resolutions=(1,),
                 num_classes=None,
                 initial_pad=0,
-                switch=True,
+                switch=self.hparams.switch,
                 )
         betas = generate_linear_schedule(
                 1000,
