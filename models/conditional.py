@@ -2,10 +2,11 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from conditional_subnet import MLP, MultiheadAttention, MapNet
+from .conditional_subnet import MLP, MultiheadAttention, MapNet
 
-class Conditional(pl.LightningModule):
+class Conditional(nn.Module):
     def __init__(self):
+        super(Conditional, self).__init__()
         self.motion_encoder = MLP(300, 128, 128)
         self.lane_encoder = MapNet(2, 128, 128, 10)
         self.lane_attn = MultiheadAttention(128, 8)
@@ -13,12 +14,13 @@ class Conditional(pl.LightningModule):
         self.neighbor_attn = MultiheadAttention(128, 8)
 
     def forward(self, data):
-        x = data['x'].reshape(-1, 300) #50*6
+        x = data['past_traj'].reshape(-1, 300) #50*6
+        x = self.motion_encoder(x)
         
-        lane = data['lane_graph']
+        lane = data['lane']
         lane = self.lane_encoder(lane)
         
-        neighbor = data['neighbor_graph'].reshape(-1, 66) #11*6
+        neighbor = data['neighbor'].reshape(-1, 66) #11*6
         neighbor = self.neighbor_encoder(neighbor)
         
         x = x.unsqueeze(0)

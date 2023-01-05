@@ -11,6 +11,8 @@ from .ema import EMA
 from utils.utils import *
 from tqdm import tqdm
 
+from .conditional import Conditional
+
 class GaussianDiffusion(nn.Module):
     
     def __init__(
@@ -29,6 +31,7 @@ class GaussianDiffusion(nn.Module):
 
         self.model = model
         self.ema_model = deepcopy(model)
+        self.conditional_model = Conditional()
 
         self.ema = EMA(ema_decay)
         self.ema_decay = ema_decay
@@ -133,6 +136,7 @@ class GaussianDiffusion(nn.Module):
     def get_losses(self, x, t, y):
         noise = torch.randn_like(x)
 
+        y = self.conditional_model(y)
         perturbed_x = self.perturb_x(x, t, noise)
         estimated_noise = self.model(perturbed_x, t, y)
 

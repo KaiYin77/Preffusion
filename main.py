@@ -10,7 +10,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 import torchvision.transforms as transforms
 
-from pytorch_gan_metrics import get_fid
+# from pytorch_gan_metrics import get_fid
 import yaml
 from pathlib import Path
 
@@ -67,8 +67,15 @@ class DDPMSystem(pl.LightningModule):
         past_traj = batch['x'].reshape(-1, 300)
         lane = batch['lane_graph']
         neighbor = batch['neighbor_graph'].reshape(-1, 66)
-
-        loss = self.ddpm(x)
+        lane_mask = batch['lane_mask']
+        neighbor_mask = batch['neighbor_mask']
+        condition_fact = {'past_traj': past_traj, 
+                            'lane': lane,
+                            'lane_mask': lane_mask, 
+                            'neighbor': neighbor, 
+                            'neighbor_mask': neighbor_mask}
+                            
+        loss = self.ddpm(x, condition_fact)
         
         return loss
 
@@ -153,8 +160,8 @@ class DDPMSystem(pl.LightningModule):
         samples = self.ddpm.sample(10, self.device)
         samples = (samples.clamp(-1, 1) + 1) / 2
         samples = transforms.Resize((28, 28))(samples)
-        FID = get_fid(samples, 'data/mnist.npz')
-        self.log('fid', FID)
+        # FID = get_fid(samples, 'data/mnist.npz')
+        # self.log('fid', FID)
 
     def test_step(self, batch, batch_idx):
         samples = self.ddpm.sample(
