@@ -4,6 +4,7 @@ from torch import optim
 from models.vae import BaseVAE, VanillaVAE
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.loggers import WandbLogger
 
 from torch.utils.data import DataLoader
 from typing import List, TypeVar, Any
@@ -49,7 +50,9 @@ class VAETrainer(pl.LightningModule):
 
         self.log_dict({key: val.item() for key, val in train_loss.items()},
                       sync_dist=True)
-        self.log('train/loss', train_loss['loss'])
+        self.log('train/loss', train_loss['loss'], on_epoch=True)
+        self.log('train/recon_loss', train_loss['Reconstruction_Loss'])
+        self.log('train/kld_loss', train_loss['KLD'])
 
         return train_loss['loss']
 
@@ -100,6 +103,7 @@ def main():
             model,
             config['vae']
             )
+    wandb_logger = WandbLogger(project='trajectory-vae')
 
     checkpoint_callback = ModelCheckpoint(
             dirpath='./ckpt/vae/',
@@ -113,6 +117,7 @@ def main():
             gpus=1,
             max_epochs=config['vae']['epochs'],
             callbacks=[checkpoint_callback],
+            logger=wandb_logger,
             )
     trainer.fit(vae_trainer, train_loader)
 
