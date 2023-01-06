@@ -325,8 +325,12 @@ class Argoverse2Dataset(Dataset):
             torch.save(sample, sample_path)
 
         if self.mode == 'sampling':
-            test_data = NoiseDataset(1)
-            sample['noise_data'] = test_data[0].unsqueeze(0)
+            test_data = NoiseDataset(6)
+            noise = []
+            for data in test_data:
+                noise.append(data)
+            noise = torch.stack(noise)
+            sample['noise_data'] = noise
 
         return sample
 

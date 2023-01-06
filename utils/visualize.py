@@ -3,6 +3,7 @@ from pathlib import Path
 import math
 import datetime
 import yaml
+import imageio
 
 import numpy as np
 from scipy import interpolate
@@ -90,7 +91,7 @@ class VisualizeInterface:
         self.x = input_batch['x'][0].detach().cpu().numpy()
         self.y = input_batch['y'][0].detach().cpu().numpy()
 
-        self.pred_traj = pred_traj.reshape(-1, 60, 4).detach().cpu().numpy()
+        self.pred_traj = pred_traj.squeeze(2).detach().cpu().numpy()
         xheading = input_batch['x'][...,
                                     4][-1].detach().cpu().numpy() * (180/3.14159)
         yheading = input_batch['y'][...,
@@ -190,6 +191,7 @@ class VisualizeInterface:
         neighbor_tracks,
         x, y,
         pred_traj,
+        output,
     ):
         fig = plt.figure()
         axes1 = fig.add_subplot(111)
@@ -316,21 +318,15 @@ class VisualizeInterface:
         )
         ''' plot prediction 
         '''
-        axes1.plot(
-            pred_traj[0, :, 0], pred_traj[0, :, 1],
-            color=config['plot']['traj']['color'],
-            linewidth=config['plot']['traj']['lw'],
-            alpha=config['plot']['traj']['alpha'],
-            zorder=1000,
-            label='prediction'
-        )
-
-        """ draw car model
-        """
-        #car_image = plt.imread('./assets/car.png')
-        #offset_image = OffsetImage(car_image, zoom=0.05)
-        #box = AnnotationBbox(offset_image, (0, 0), frameon=False, zorder=999)
-        # axes1.add_artist(box)
+        for i in range(pred_traj.shape[0]):
+            axes1.plot(
+                pred_traj[i, :, 0], pred_traj[i, :, 1],
+                color=config['plot']['traj']['color'],
+                linewidth=config['plot']['traj']['lw'],
+                alpha=config['plot']['traj']['alpha'],
+                zorder=1000,
+                label='prediction'
+            )
 
         axes1.axis('equal')
 
@@ -340,28 +336,46 @@ class VisualizeInterface:
             by_label.values(),
             by_label.keys()
         )
-        save_dir = Path('./images/')
-        save_dir.mkdir(parents=True, exist_ok=True)
-        fname = datetime.datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S_%f")
+        #save_dir = Path('./images/')
+        #save_dir.mkdir(parents=True, exist_ok=True)
+        #fname = datetime.datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S_%f")
 
-        plt.savefig(f"{save_dir}/{fname}.png", dpi=600)
-        plt.clf()
+        #plt.savefig(f"{save_dir}/{fname}.png", dpi=600)
+        # plt.clf()
+        axes1.set_xlim([-20, 80])
+        axes1.set_ylim([-50, 50])
+        plt.savefig(output, dpi=100)
+        plt.close()
 
     def argo_forward(
         self,
         batch, batch_idx, dataset, traj
     ):
-        # self.check_interrupt()
         self.prepare_argo_data(batch, batch_idx, dataset, traj)
-        self.argo_matplot(
-            "Diffusion of trajectory prediction",
-            self.lane_graph, self.lane_polygon,
-            self.crosswalk_polygon,
-            self.lane_boundary,
-            self.neighbor_tracks,
-            np.transpose(self.x, (1, 0)), np.transpose(self.y, (1, 0)),
-            self.pred_traj,
-        )
+
+        filenames = []
+        save_dir = Path('./images/')
+        save_dir.mkdir(parents=True, exist_ok=True)
+        for i in range(self.pred_traj.shape[0]):
+            filename =  f"{save_dir}/{i}.png"
+            filenames.append(filename)
+            self.argo_matplot(
+                "Diffusion process of trajectory prediction",
+                self.lane_graph, self.lane_polygon,
+                self.crosswalk_polygon,
+                self.lane_boundary,
+                self.neighbor_tracks,
+                np.transpose(self.x, (1, 0)), np.transpose(self.y, (1, 0)),
+                self.pred_traj[i],
+                filename
+            )
+        gif_name = datetime.datetime.utcnow().strftime("%Y_%m_%d_%H_%M_%S_%f")
+        with imageio.get_writer(f'{save_dir}/{gif_name}.gif', mode='I') as writer:
+            for filename in filenames:
+                image = imageio.imread(filename)
+                writer.append_data(image)
+        for filename in set(filenames):
+            os.remove(filename)
 
 
 def path_smoothing(waypoints, custom_num=120):

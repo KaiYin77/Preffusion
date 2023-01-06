@@ -136,7 +136,7 @@ class DDPMSystem(pl.LightningModule):
             batch_size=1,
             collate_fn=self.collate_fn,
             pin_memory=True,
-            shuffle=False,
+            shuffle=True,
             num_workers=0,
         )
 

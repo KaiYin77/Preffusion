@@ -107,14 +107,17 @@ class GaussianDiffusion(nn.Module):
                               'neighbor_mask': neighbor_mask}
             y = condition_fact
             y = self.conditional_model(y)
-        
+        x_diffusion_process = []
         for t in tqdm(range(self.num_timesteps - 1, -1, -1)):
             t_batch = torch.tensor([t], device=device).repeat(batch_size)
             x = self.remove_noise(x, t_batch, y, use_ema)
 
             if t > 0:
                 x += extract(self.sigma, t_batch, x.shape) * torch.randn_like(x)
-        
+            if t % 100 == 0:
+                x_diffusion_process.append(x)
+        x_diffusion_process = torch.stack(x_diffusion_process)
+        x = x_diffusion_process
         return x.cpu().detach()
 
     @torch.no_grad()
