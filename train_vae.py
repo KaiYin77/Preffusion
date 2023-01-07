@@ -28,6 +28,7 @@ class VAETrainer(pl.LightningModule):
         self.params = params
         self.curr_device = None
         self.hold_graph = False
+        self.save_hyperparameters()
         # try:
         #     self.hold_graph = self.params['retain_first_backpass']
         # except:
