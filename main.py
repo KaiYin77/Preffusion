@@ -48,7 +48,7 @@ class DDPMSystem(pl.LightningModule):
             switch=self.hparams.switch,
         )
         self.vae_trainer = VAETrainer.load_from_checkpoint(
-                './ckpt/vae/vae_epoch=14.ckpt'
+                hparams.vae_weight
         )
         self.vae = self.vae_trainer.model
 

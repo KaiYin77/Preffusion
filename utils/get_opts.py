@@ -31,6 +31,8 @@ def get_opts():
 
     parser.add_argument('--weight', type=str,
                         default=None)
+    parser.add_argument('--vae_weight', type=str,
+                        default=None, requred=True)
     parser.add_argument('--save_top_k', type=int,
                         default=3)
     parser.add_argument('--train', action='store_true')
