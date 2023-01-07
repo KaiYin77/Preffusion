@@ -122,7 +122,7 @@ class GaussianDiffusion(nn.Module):
                 x_diffusion_process.append(x)
         x_diffusion_process = torch.stack(x_diffusion_process)
         x = x_diffusion_process
-        return x.cpu().detach()
+        return x
 
     @torch.no_grad()
     def sample_diffusion_sequence(self, batch_size, device, y=None, use_ema=True):

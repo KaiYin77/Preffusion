@@ -186,6 +186,7 @@ class DDPMSystem(pl.LightningModule):
             device=self.device,
             input=batch
         )
+        samples = self.vae.decode(samples).cpu().detach()
         self.visualize_interface.argo_forward(
             batch,
             batch_idx,
