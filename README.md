@@ -58,7 +58,11 @@ password: `root`
 
 ### Train ldm
 
-`python main.py --vae_weight PATH_TO_CKPT`
+`python main.py --vae_weight PATH_TO_VAE_CKPT`
+
+### Sample from ldm
+
+`python main.py --test --vae_weight PATH_TO_VAE_CKPT --weight PATH_TO_LDM_CKPT`
 
 ---
 ## Idea
