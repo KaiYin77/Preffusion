@@ -50,6 +50,7 @@ class DDPMSystem(pl.LightningModule):
         self.vae_trainer = VAETrainer.load_from_checkpoint(
                 self.hparams.vae_weight
         )
+        self.vae_trainer.freeze()
         self.vae = self.vae_trainer.model
 
         betas = generate_linear_schedule(
