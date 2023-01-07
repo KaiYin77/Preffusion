@@ -31,7 +31,7 @@ class GaussianDiffusion(nn.Module):
 
         self.model = model
         self.ema_model = deepcopy(model)
-        self.conditional_model = Conditional(vae_encode = False)
+        self.conditional_model = Conditional(vae_encode = True)
 
         self.ema = EMA(ema_decay)
         self.ema_decay = ema_decay
