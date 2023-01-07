@@ -25,7 +25,7 @@ from models.ddpm import GaussianDiffusion
 from models.vae import VanillaVAE
 from train_vae import VAETrainer
 # from copy import deepcopy
-import ipdb
+# import ipdb
 
 
 class DDPMSystem(pl.LightningModule):
@@ -186,7 +186,8 @@ class DDPMSystem(pl.LightningModule):
             device=self.device,
             input=batch
         )
-        samples = self.vae.decode(samples).cpu().detach()
+        samples = self.vae.decode(samples)
+        samples = samples.reshape(10, -1, 1, 60, 5).cpu().detach()
         self.visualize_interface.argo_forward(
             batch,
             batch_idx,
