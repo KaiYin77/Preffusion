@@ -47,14 +47,10 @@ class DDPMSystem(pl.LightningModule):
             initial_pad=0,
             switch=self.hparams.switch,
         )
-        # self.vae = VanillaVAE(
-        #             in_channels=self.config['vae']['in_channels'],
-        #             latent_dim=self.config['vae']['latent_dim'],
-        # )
         self.vae_trainer = VAETrainer.load_from_checkpoint(
-                './ckpt/vae/vae_epoch=941.ckpt'
+                './ckpt/vae/vae_epoch=14.ckpt'
         )
-        self.vae.load_state_dict(torch.load('./ckpt/vae/vae_epoch=941.ckpt'))
+
         betas = generate_linear_schedule(
             1000,
             1e-4 * 1000 / 1000,
