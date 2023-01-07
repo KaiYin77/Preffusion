@@ -13,6 +13,8 @@ from tqdm import tqdm
 
 from .conditional import Conditional
 
+import ipdb
+
 class GaussianDiffusion(nn.Module):
     
     def __init__(
@@ -107,6 +109,8 @@ class GaussianDiffusion(nn.Module):
                               'neighbor_mask': neighbor_mask}
             y = condition_fact
             y = self.conditional_model(y)
+        # ipdb.set_trace()
+        y = y.reshape(-1, 1, 16, 16)
         x_diffusion_process = []
         for t in tqdm(range(self.num_timesteps - 1, -1, -1)):
             t_batch = torch.tensor([t], device=device).repeat(batch_size)

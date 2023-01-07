@@ -5,7 +5,7 @@ import torch
 class NoiseDataset(Dataset):
     def __init__(self, len=6):
         self.len = len
-        self.x = torch.randn(len, 1, 60, 4)
+        self.x = torch.randn(len, 1, 16, 16)
 
     def __len__(self):
         return self.len
