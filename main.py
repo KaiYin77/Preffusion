@@ -25,7 +25,7 @@ from models.ddpm import GaussianDiffusion
 from models.vae import VanillaVAE
 from train_vae import VAETrainer
 # from copy import deepcopy
-# import ipdb
+import ipdb
 
 
 class DDPMSystem(pl.LightningModule):
@@ -50,6 +50,7 @@ class DDPMSystem(pl.LightningModule):
         self.vae_trainer = VAETrainer.load_from_checkpoint(
                 './ckpt/vae/vae_epoch=14.ckpt'
         )
+        self.vae = self.vae_trainer.model
 
         betas = generate_linear_schedule(
             1000,
@@ -70,7 +71,9 @@ class DDPMSystem(pl.LightningModule):
     def forward(self, batch):
         ''' Future Trajectory
         '''
-        x = batch['y'].reshape(-1, 1, 60, 5)[..., :4]
+        x = batch['y'].reshape(-1, 60*5)
+        # encode to latent space -> N, 256
+        x = self.vae.encode(x)[0]
         ''' Conditioning Factor
         '''
         past_traj = batch['x'].reshape(-1, 300)
