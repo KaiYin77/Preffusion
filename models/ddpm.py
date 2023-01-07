@@ -31,7 +31,7 @@ class GaussianDiffusion(nn.Module):
 
         self.model = model
         self.ema_model = deepcopy(model)
-        self.conditional_model = Conditional()
+        self.conditional_model = Conditional(vae_encode = False)
 
         self.ema = EMA(ema_decay)
         self.ema_decay = ema_decay
@@ -154,6 +154,7 @@ class GaussianDiffusion(nn.Module):
         y = self.conditional_model(y)
         perturbed_x = self.perturb_x(x, t, noise)
         
+        y = y.reshape(x.shape)
         estimated_noise = self.model(perturbed_x, t, y)
 
         if self.loss_type == "l1":
