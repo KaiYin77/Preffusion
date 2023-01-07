@@ -1,7 +1,8 @@
 ---
 data:
-    root: /home/cloud_computing/argo/
+    root: /data/
     validation_txt: ./data_path/validation.txt
+    training_txt: ./data_path/training.txt
 
 constant:
   time_horizon: 6

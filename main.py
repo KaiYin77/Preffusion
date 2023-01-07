@@ -93,13 +93,17 @@ class DDPMSystem(pl.LightningModule):
         return loss
 
     def setup(self, stage):
+        processed_train_dir = Path(self.config['data']['root']) /\
+            Path('processed/training/')
+        processed_train_dir.mkdir(parents=True, exist_ok=True)
         processed_val_dir = Path(self.config['data']['root']) /\
             Path('processed/validation/')
         processed_val_dir.mkdir(parents=True, exist_ok=True)
+        
         self.train_dataset = Argoverse2Dataset(
-            Path(self.config['data']['root'])/Path('raw/validation/'),
-            self.config['data']['validation_txt'],
-            processed_val_dir
+            Path(self.config['data']['root'])/Path('raw/training/'),
+            self.config['data']['training_txt'],
+            processed_train_dir
         )
         self.test_dataset = Argoverse2Dataset(
             Path(self.config['data']['root'])/Path('raw/validation/'),
