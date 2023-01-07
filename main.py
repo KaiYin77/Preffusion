@@ -73,7 +73,7 @@ class DDPMSystem(pl.LightningModule):
         '''
         x = batch['y'].reshape(-1, 60*5)
         # encode to latent space -> N, 256
-        x = self.vae.encode(x)[0]
+        x = self.vae.encode(x)[0].reshape(-1, 1, 16, 16)
         ''' Conditioning Factor
         '''
         past_traj = batch['x'].reshape(-1, 300)
