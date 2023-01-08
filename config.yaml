@@ -1,6 +1,6 @@
 ---
 data:
-    root: /data/
+    root: /cloud_computing
     validation_txt: ./data_path/validation.txt
     training_txt: ./data_path/training.txt
 
