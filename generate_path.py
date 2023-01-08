@@ -9,7 +9,7 @@ with open('config.yaml', 'r') as f:
 data_path_dir = Path('data_path/')
 data_path_dir.mkdir(parents=True, exist_ok=True)
 
-splits = ['validation']
+splits = ['validation', 'training']
 for split in splits:
     f = open('data_path/' + split + '.txt', 'w')
     target_dir = Path(config['data']['root']) / Path('raw/'+split)

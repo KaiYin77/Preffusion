@@ -31,10 +31,13 @@ def get_opts():
 
     parser.add_argument('--weight', type=str,
                         default=None)
+    parser.add_argument('--vae_weight', type=str,
+                        default=None, required=True)
     parser.add_argument('--save_top_k', type=int,
                         default=3)
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--test', action='store_true')
+    parser.add_argument('--val', action='store_true')
     parser.add_argument('--exp_name', type=str,
                         default='exp')
     parser.add_argument('--fast_dev', action='store_true')

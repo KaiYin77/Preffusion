@@ -5,13 +5,15 @@ import torch.nn.functional as F
 from .conditional_subnet import MLP, MultiheadAttention, MapNet
 
 class Conditional(nn.Module):
-    def __init__(self):
+    def __init__(self, vae_encode = True):
         super(Conditional, self).__init__()
+        self.vae_encode = vae_encode
         self.motion_encoder = MLP(300, 240, 240)
         self.lane_encoder = MapNet(2, 240, 240, 10)
         self.lane_attn = MultiheadAttention(240, 8)
         self.neighbor_encoder = MLP(66, 240, 240)
         self.neighbor_attn = MultiheadAttention(240, 8)
+        self.vae_encoder = nn.Linear(240, 256)
 
     def forward(self, data):
         batch_size = data['past_traj'].shape[0]
@@ -32,5 +34,9 @@ class Conditional(nn.Module):
         x = self.lane_attn(x, lane, lane, attn_mask=lane_mask) 
         
         neighbor_mask = data['neighbor_mask']
-        x = self.neighbor_attn(x, neighbor, neighbor, attn_mask=neighbor_mask) 
-        return x.reshape(batch_size, -1, 60, 4)
+        x = self.neighbor_attn(x, neighbor, neighbor, attn_mask=neighbor_mask)
+
+        if (self.vae_encode):
+            x = self.vae_encoder(x)
+
+        return x

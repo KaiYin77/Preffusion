@@ -13,6 +13,8 @@ from tqdm import tqdm
 
 from .conditional import Conditional
 
+import ipdb
+
 class GaussianDiffusion(nn.Module):
     
     def __init__(
@@ -31,7 +33,7 @@ class GaussianDiffusion(nn.Module):
 
         self.model = model
         self.ema_model = deepcopy(model)
-        self.conditional_model = Conditional()
+        self.conditional_model = Conditional(vae_encode = True)
 
         self.ema = EMA(ema_decay)
         self.ema_decay = ema_decay
@@ -107,6 +109,8 @@ class GaussianDiffusion(nn.Module):
                               'neighbor_mask': neighbor_mask}
             y = condition_fact
             y = self.conditional_model(y)
+        # ipdb.set_trace()
+        y = y.reshape(-1, 1, 16, 16)
         x_diffusion_process = []
         for t in tqdm(range(self.num_timesteps - 1, -1, -1)):
             t_batch = torch.tensor([t], device=device).repeat(batch_size)
@@ -118,7 +122,7 @@ class GaussianDiffusion(nn.Module):
                 x_diffusion_process.append(x)
         x_diffusion_process = torch.stack(x_diffusion_process)
         x = x_diffusion_process
-        return x.cpu().detach()
+        return x
 
     @torch.no_grad()
     def sample_diffusion_sequence(self, batch_size, device, y=None, use_ema=True):
@@ -154,6 +158,7 @@ class GaussianDiffusion(nn.Module):
         y = self.conditional_model(y)
         perturbed_x = self.perturb_x(x, t, noise)
         
+        y = y.reshape(x.shape)
         estimated_noise = self.model(perturbed_x, t, y)
 
         if self.loss_type == "l1":

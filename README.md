@@ -50,6 +50,20 @@ Add `-v PATH_TO_DATA:/data` if needed.
 To Enter container: `ssh root@localhost -p 2232`
 password: `root`
 
+## Run code
+
+### Train VAE
+
+`python train_vae.py`
+
+### Train ldm
+
+`python main.py --vae_weight PATH_TO_VAE_CKPT`
+
+### Sample from ldm
+
+`python main.py --test --vae_weight PATH_TO_VAE_CKPT --weight PATH_TO_LDM_CKPT`
+
 ---
 ## Idea
 
