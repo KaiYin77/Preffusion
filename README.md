@@ -1,6 +1,8 @@
 # Preffusion: Boosting Stochastic Trajectory Prediction using Conditional Latent Diffusion Model
-![image](https://github.com/KaiYin77/Preffusion/blob/main/public/banner.gif)
 
+<p align="center">
+  <img src="https://github.com/KaiYin77/Preffusion/blob/main/public/banner.gif" alt="banner"/>
+</p>
 
 ## Get Started
 ### 1. Create virtual environment
