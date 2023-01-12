@@ -99,6 +99,7 @@ Argoverse 2 Motion Forecasting Dataset:
 
 ## Reference
 [latent-diffusion](https://github.com/CompVis/latent-diffusion)
+[pytorch-diffusion](https://github.com/awjuliani/pytorch-diffusion)
 
 ## Members
 * 侯俊宇 311511035 jerry.ee07@nycu.edu.tw
