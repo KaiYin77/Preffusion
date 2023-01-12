@@ -99,6 +99,8 @@ Argoverse 2 Motion Forecasting Dataset:
 
 ## Reference
 [latent-diffusion](https://github.com/CompVis/latent-diffusion)
+
+The architecture of diffusion model is based on:
 [pytorch-diffusion](https://github.com/awjuliani/pytorch-diffusion)
 
 ## Members
