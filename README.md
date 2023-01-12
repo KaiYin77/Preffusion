@@ -1,4 +1,4 @@
-# Stochastic Trajectory Prediction via Conditional Diffusion Models
+# Preffusion: Boosting Stochastic Trajectory Prediction using Conditional Latent Diffusion Model
 
 ## Get Started
 ### 1. Create virtual environment
